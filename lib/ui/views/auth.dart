@@ -1,10 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:schedulerapp/constants/app_constants.dart';
 import 'package:schedulerapp/services/auth.dart';
-import 'package:schedulerapp/services/authentication_service.dart';
+import 'package:schedulerapp/services/push_notification_service.dart';
 import 'package:schedulerapp/ui/views/base.widget.dart';
 import 'package:schedulerapp/viewmodels/views/login_view_model.dart';
 
@@ -15,8 +15,114 @@ class AuthorizationPage extends StatefulWidget {
 
 class _AuthorizationPageState extends State<AuthorizationPage> {
   TextEditingController _idController = TextEditingController();
-  String _id;
+  final _codeController = TextEditingController();
+  final _authApi = AuthApi();
+  String _id, verificationId;
   bool showLogin = true;
+
+  bool codeSent = false;
+  bool successful = false;
+
+  Future<bool> loginUser(String phone, BuildContext context) async{
+    FirebaseAuth _auth = FirebaseAuth.instance;
+
+    _auth.verifyPhoneNumber(
+        phoneNumber: phone,
+        timeout: Duration(seconds: 60),
+        verificationCompleted: (AuthCredential credential) async{
+          Navigator.of(context).pop();
+
+          AuthResult result = await _auth.signInWithCredential(credential);
+
+          FirebaseUser user = result.user;
+
+          var userFromBack = await _authApi.fetchUser(user.phoneNumber);
+          if (userFromBack.name != user.displayName) {
+            UserUpdateInfo userUpdateInfo = new UserUpdateInfo();
+            userUpdateInfo.displayName = userFromBack.name;
+
+            await user.updateProfile(userUpdateInfo);
+          }
+
+          PushNotificationService pushNotificationService = new PushNotificationService(user);
+          await pushNotificationService.initialize();
+
+
+          if (user != null) {
+            Navigator.pushNamed(context, RoutePaths.Home);
+          } else {
+            print("Error");
+          }
+
+          //This callback would gets called when verification is done auto maticlly
+        },
+        verificationFailed: (AuthException exception){
+          print(exception);
+        },
+        codeSent: (String verificationId, [int forceResendingToken]){
+          showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) {
+                return AlertDialog(
+                  title: Text("На ваш номер телефона был выслан код", style: TextStyle(color: Colors.black),),
+                  content: Padding(
+                    padding: const EdgeInsets.only(top: 15),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        TextField(
+                          controller: _codeController,
+                          maxLength: 6,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: <Widget>[
+                    Container(
+                      margin: const EdgeInsets.only(right: 80),
+                      child: FlatButton(
+                        padding: EdgeInsets.symmetric(horizontal: 30.0),
+                        child: Text("Подтвердить", style: TextStyle(fontSize: 15)),
+                        textColor: Colors.white,
+                        color: Colors.blue,
+                        onPressed: () async{
+                          final code = _codeController.text.trim();
+                          AuthCredential credential = PhoneAuthProvider.getCredential(verificationId: verificationId, smsCode: code);
+
+                          AuthResult result = await _auth.signInWithCredential(credential);
+
+                          FirebaseUser user = result.user;
+
+                          var userFromBack = await AuthApi().fetchUser(user.phoneNumber);
+                          if (userFromBack.name != user.displayName) {
+                            UserUpdateInfo userUpdateInfo = new UserUpdateInfo();
+                            userUpdateInfo.displayName = userFromBack.name;
+
+                            await user.updateProfile(userUpdateInfo);
+                          }
+
+                          PushNotificationService pushNotificationService = new PushNotificationService(user);
+                          await pushNotificationService.initialize();
+
+                          if(user != null){
+                            Navigator.pushNamed(context, RoutePaths.Home);
+                          }else{
+                            print("Ошибка");
+                          }
+                        },
+                      ),
+                    )
+                  ],
+                );
+              }
+          );
+        },
+        codeAutoRetrievalTimeout: null
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +147,7 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
           child: TextField(
             controller: controller,
             obscureText: obsecure,
+            keyboardType: TextInputType.phone,
             style: TextStyle(fontSize: 20, color: Colors.white),
             decoration: InputDecoration(
                 hintStyle: TextStyle(
@@ -76,25 +183,14 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
           _id = _idController.text;
           if (_id.isEmpty) return;
 
-          var loginSuccess = await model.login(_id.trim());
-
-          if (loginSuccess) {
-            Navigator.pushNamed(context, RoutePaths.Home);
-          } else {
-            Fluttertoast.showToast(
-                msg: "Неверный ID студента/преподавателя",
-                toastLength: Toast.LENGTH_SHORT,
-                gravity: ToastGravity.CENTER,
-                timeInSecForIosWeb: 1,
-                backgroundColor: Colors.red,
-                textColor: Colors.white,
-                fontSize: 16.0);
-          }
+          loginUser(_id, context);
 
           _idController.clear();
         },
       );
     }
+
+
 
     Widget _form(String label, LoginViewModel model) {
       return Container(
@@ -103,7 +199,7 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
             Padding(
                 padding: EdgeInsets.only(bottom: 20, top: 20),
                 child: _input(
-                    Icon(Icons.perm_identity), "ID", _idController, false)),
+                    Icon(Icons.phone), "Номер телефона", _idController, false)),
             SizedBox(
               height: 20,
             ),
@@ -121,6 +217,7 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
     }
 
 
+
     return BaseWidget<LoginViewModel>(
       model: LoginViewModel(authService: Provider.of(context)),
       builder: (context, model, child) => Scaffold(
@@ -134,9 +231,12 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
                   ),
                   model.busy
                       ? CircularProgressIndicator()
-                      : _form('ВОЙТИ', model),
+                      : _form('Выслать код на номер телефона', model),
                 ],
               )),
         );
   }
+
+
+
 }

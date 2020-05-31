@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:schedulerapp/constants/app_constants.dart';
 import 'package:schedulerapp/domain/user.dart';
+import 'package:schedulerapp/services/authentication_service.dart';
 import 'package:schedulerapp/ui/views/base.widget.dart';
 import 'package:schedulerapp/viewmodels/widgets/consultation_model.dart';
 

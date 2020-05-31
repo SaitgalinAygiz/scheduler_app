@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:schedulerapp/provider_setup.dart';
+import 'package:schedulerapp/services/push_notification_service.dart';
 import 'package:schedulerapp/ui/router.dart';
 import 'constants/app_constants.dart';
-
-import 'domain/user.dart';
 
 void main() {
   Provider.debugCheckInvalidValueType = null; //this

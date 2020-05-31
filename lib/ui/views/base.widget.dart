@@ -23,8 +23,10 @@ class _BaseWidgetState<T extends ChangeNotifier> extends State<BaseWidget<T>> {
     if (widget.onModelReady != null) {
       widget.onModelReady(model);
     }
+
     super.initState();
   }
+
 
   @override
   Widget build(BuildContext context) {

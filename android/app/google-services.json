@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1068001175337",
+    "firebase_url": "https://schedular-app-9225f.firebaseio.com",
+    "project_id": "schedular-app-9225f",
+    "storage_bucket": "schedular-app-9225f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1068001175337:android:5a2be88ed465008b58b938",
+        "android_client_info": {
+          "package_name": "com.aygizs.schedulerapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1068001175337-nbaeslue7gtb0g3p1cotdji81obleh1f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB47jW63pA8bW8BP55U7x33OsSjeSptrfo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1068001175337-nbaeslue7gtb0g3p1cotdji81obleh1f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

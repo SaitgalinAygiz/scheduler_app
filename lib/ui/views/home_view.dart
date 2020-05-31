@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:schedulerapp/domain/consultation.dart';
 import 'package:schedulerapp/domain/user.dart';
+import 'package:schedulerapp/services/authentication_service.dart';
 import 'package:schedulerapp/ui/widgets/consultations.dart';
 
 class HomePage extends StatelessWidget {
