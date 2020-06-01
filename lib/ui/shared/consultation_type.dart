@@ -27,10 +27,11 @@ class ConsultationType extends StatelessWidget {
       children: <Widget>[
         Expanded(
             flex: 1,
-            child: LinearProgressIndicator(
-                backgroundColor: Theme.of(context).textTheme.headline6.color,
-                value: indicatorLevel,
-                valueColor: AlwaysStoppedAnimation(color))),
+            child: CircleAvatar(
+                backgroundColor: color,
+              radius: 6,
+            )
+        ),
         SizedBox(width: 10),
         Expanded(
             flex: 3,

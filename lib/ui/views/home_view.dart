@@ -18,7 +18,7 @@ class HomePage extends StatelessWidget {
           title: Text('${Provider.of<User>(context).name}'),
           leading: Icon(Icons.school),
         ),
-        body: Consultations(),
+        body: Container(padding: EdgeInsets.only(top: 20),child: Consultations()),
       ),
     );
   }

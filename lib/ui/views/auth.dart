@@ -23,13 +23,16 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
   bool codeSent = false;
   bool successful = false;
 
-  Future<bool> loginUser(String phone, BuildContext context) async{
+  Future<bool> loginUser(String phone, BuildContext context) async {
     FirebaseAuth _auth = FirebaseAuth.instance;
 
     _auth.verifyPhoneNumber(
         phoneNumber: phone,
+        verificationFailed: (AuthException exception) async {
+          print(exception.message);
+        },
         timeout: Duration(seconds: 60),
-        verificationCompleted: (AuthCredential credential) async{
+        verificationCompleted: (AuthCredential credential) async {
           Navigator.of(context).pop();
 
           AuthResult result = await _auth.signInWithCredential(credential);
@@ -44,9 +47,9 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
             await user.updateProfile(userUpdateInfo);
           }
 
-          PushNotificationService pushNotificationService = new PushNotificationService(user);
+          PushNotificationService pushNotificationService =
+              new PushNotificationService(user);
           await pushNotificationService.initialize();
-
 
           if (user != null) {
             Navigator.pushNamed(context, RoutePaths.Home);
@@ -56,22 +59,23 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
 
           //This callback would gets called when verification is done auto maticlly
         },
-        verificationFailed: (AuthException exception){
-          print(exception);
-        },
-        codeSent: (String verificationId, [int forceResendingToken]){
+        codeSent: (String verificationId, [int forceResendingToken]) {
           showDialog(
               context: context,
               barrierDismissible: false,
               builder: (context) {
                 return AlertDialog(
-                  title: Text("На ваш номер телефона был выслан код", style: TextStyle(color: Colors.black),),
+                  title: Text(
+                    "На ваш номер телефона был выслан код",
+                    style: TextStyle(color: Colors.black),
+                  ),
                   content: Padding(
                     padding: const EdgeInsets.only(top: 15),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         TextField(
+                          keyboardType: TextInputType.phone,
                           controller: _codeController,
                           maxLength: 6,
                           textAlign: TextAlign.center,
@@ -84,31 +88,39 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
                       margin: const EdgeInsets.only(right: 80),
                       child: FlatButton(
                         padding: EdgeInsets.symmetric(horizontal: 30.0),
-                        child: Text("Подтвердить", style: TextStyle(fontSize: 15)),
+                        child:
+                            Text("Подтвердить", style: TextStyle(fontSize: 15)),
                         textColor: Colors.white,
                         color: Colors.blue,
-                        onPressed: () async{
+                        onPressed: () async {
                           final code = _codeController.text.trim();
-                          AuthCredential credential = PhoneAuthProvider.getCredential(verificationId: verificationId, smsCode: code);
+                          AuthCredential credential =
+                              PhoneAuthProvider.getCredential(
+                                  verificationId: verificationId,
+                                  smsCode: code);
 
-                          AuthResult result = await _auth.signInWithCredential(credential);
+                          AuthResult result =
+                              await _auth.signInWithCredential(credential);
 
                           FirebaseUser user = result.user;
 
-                          var userFromBack = await AuthApi().fetchUser(user.phoneNumber);
+                          var userFromBack =
+                              await AuthApi().fetchUser(user.phoneNumber);
                           if (userFromBack.name != user.displayName) {
-                            UserUpdateInfo userUpdateInfo = new UserUpdateInfo();
+                            UserUpdateInfo userUpdateInfo =
+                                new UserUpdateInfo();
                             userUpdateInfo.displayName = userFromBack.name;
 
                             await user.updateProfile(userUpdateInfo);
                           }
 
-                          PushNotificationService pushNotificationService = new PushNotificationService(user);
+                          PushNotificationService pushNotificationService =
+                              new PushNotificationService(user);
                           await pushNotificationService.initialize();
 
-                          if(user != null){
+                          if (user != null) {
                             Navigator.pushNamed(context, RoutePaths.Home);
-                          }else{
+                          } else {
                             print("Ошибка");
                           }
                         },
@@ -116,26 +128,34 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
                     )
                   ],
                 );
-              }
-          );
+              });
         },
-        codeAutoRetrievalTimeout: null
-    );
+        codeAutoRetrievalTimeout: null);
   }
-
 
   @override
   Widget build(BuildContext context) {
     Widget _logo() {
       return Padding(
-        padding: EdgeInsets.only(top: 100),
+        padding: EdgeInsets.only(top: 0),
         child: Container(
-          child: Align(
-              child: Text('УКРТБ',
-                  style: TextStyle(
-                      fontSize: 45,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white))),
+          child: Stack(children: <Widget>[
+            Align(
+                child: Text('УКРТБ',
+                    style: TextStyle(
+                        fontSize: 45,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white))),
+            Padding(
+                padding: const EdgeInsets.only(top: 70),
+              child: Align(
+                  child: Text('Дистанционное обучение',
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white))),
+            ),
+          ]),
         ),
       );
     }
@@ -152,7 +172,7 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
             decoration: InputDecoration(
                 hintStyle: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                    fontSize: 14,
                     color: Colors.white30),
                 hintText: hint,
                 focusedBorder: OutlineInputBorder(
@@ -178,7 +198,7 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
             style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).primaryColor,
-                fontSize: 20)),
+                fontSize: 15)),
         onPressed: () async {
           _id = _idController.text;
           if (_id.isEmpty) return;
@@ -189,8 +209,6 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
         },
       );
     }
-
-
 
     Widget _form(String label, LoginViewModel model) {
       return Container(
@@ -216,27 +234,22 @@ class _AuthorizationPageState extends State<AuthorizationPage> {
       );
     }
 
-
-
     return BaseWidget<LoginViewModel>(
       model: LoginViewModel(authService: Provider.of(context)),
       builder: (context, model, child) => Scaffold(
-              backgroundColor: Theme.of(context).primaryColor,
-              body: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  _logo(),
-                  SizedBox(
-                    height: 100,
-                  ),
-                  model.busy
-                      ? CircularProgressIndicator()
-                      : _form('Выслать код на номер телефона', model),
-                ],
-              )),
-        );
+          backgroundColor: Theme.of(context).primaryColor,
+          body: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              _logo(),
+              SizedBox(
+                height: 100,
+              ),
+              model.busy
+                  ? CircularProgressIndicator()
+                  : _form('Выслать код на номер телефона', model),
+            ],
+          )),
+    );
   }
-
-
-
 }
